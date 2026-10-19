@@ -14,9 +14,10 @@ import {
   Loader2,
 } from "lucide-react";
 
-const API_URL =
+const API_URL = (
   import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+  "https://safeops-backend.onrender.com/api"
+).replace(/\/+$/, "");
 
 const MAX_RECORDING_TIME =
   30 * 60 * 1000;
@@ -188,46 +189,33 @@ export default function EmergencyRecorder({
       // RECORDING FORMAT
       // -----------------------------------------------------
 
-      let mimeType =
-        "video/webm;codecs=vp9,opus";
+      // RECORDING FORMAT
 
-      if (
-        !MediaRecorder.isTypeSupported(
-          mimeType
-        )
-      ) {
-        mimeType =
-          "video/webm;codecs=vp8,opus";
+      if (typeof MediaRecorder === "undefined") {
+        throw new Error(
+          "Recording is not supported by this browser."
+        );
       }
 
-      if (
-        !MediaRecorder.isTypeSupported(
-          mimeType
-        )
-      ) {
-        mimeType =
-          "video/webm";
-      }
+      const supportedTypes = [
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=vp8,opus",
+        "video/webm",
+        "video/mp4",
+      ];
 
-      console.log(
-        "🎬 Recording format:",
-        mimeType
+      const mimeType = supportedTypes.find((type) =>
+        MediaRecorder.isTypeSupported(type)
       );
 
-      // -----------------------------------------------------
       // MEDIA RECORDER
-      // -----------------------------------------------------
 
-      const recorder =
-        new MediaRecorder(
-          stream,
-          {
-            mimeType,
-          }
-        );
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
 
-      mediaRecorderRef.current =
-        recorder;
+            mediaRecorderRef.current =
+              recorder;
 
       // -----------------------------------------------------
       // DATA AVAILABLE
@@ -483,10 +471,14 @@ export default function EmergencyRecorder({
       const formData =
         new FormData();
 
+      const extension = mimeType?.includes("mp4")
+        ? "mp4"
+        : "webm";
+
       formData.append(
         "video",
         blob,
-        `emergency-${Date.now()}.webm`
+        `emergency-${Date.now()}.${extension}`
       );
 
       formData.append(

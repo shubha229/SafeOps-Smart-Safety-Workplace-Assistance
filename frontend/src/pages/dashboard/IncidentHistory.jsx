@@ -287,18 +287,20 @@ export default function IncidentHistory() {
           "📥 Loading evidence history..."
         );
 
-        const response =
-          await fetch(
-            "http://localhost:5000/api/evidence",
-            {
-              method: "GET",
+        const API_URL = (
+          import.meta.env.VITE_API_URL ||
+          "https://safeops-backend.onrender.com/api"
+        ).replace(/\/+$/, "");
 
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
-          );
+        const response = await fetch(
+          `${API_URL}/evidence`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new Error(

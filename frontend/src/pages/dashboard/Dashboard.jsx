@@ -304,18 +304,17 @@ export default function Dashboard() {
             return;
           }
 
-          const response =
-            await fetch(
-              "http://localhost:5000/api/emergency-contacts",
-              {
-                method: "GET",
+          const API_URL = import.meta.env.VITE_API_URL?.replace(/\/+$/, "");
 
-                headers: {
-                  Authorization:
-                    `Bearer ${token}`,
-                },
-              }
-            );
+          const response = await fetch(
+            `${API_URL}/api/emergency-contacts`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
           if (!response.ok) {
             throw new Error(

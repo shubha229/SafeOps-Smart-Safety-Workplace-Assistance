@@ -1,3 +1,4 @@
+
 import {
   createContext,
   useContext,
@@ -9,9 +10,10 @@ import axios from "axios";
 
 const AuthContext = createContext(null);
 
-const API_URL =
+const API_URL = (
   import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+  "https://safeops-backend.onrender.com/api"
+).replace(/\/+$/, "");
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -38,92 +40,51 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  // =========================
   // LOGIN
-  // =========================
   const login = async (email, password) => {
     const response = await axios.post(
-      `${API_URL}/api/auth/login`,
-      {
-        email,
-        password,
-      },
-      {
-        withCredentials: true,
-      }
+      `${API_URL}/auth/login`,
+      { email, password },
+      { withCredentials: true }
     );
 
     const data = response.data;
 
     if (!data.success || !data.token) {
-      throw new Error(
-        data.message || "Login failed"
-      );
+      throw new Error(data.message || "Login failed");
     }
 
-    localStorage.setItem(
-      "safeops_token",
-      data.token
-    );
-
-    localStorage.setItem(
-      "safeops_user",
-      JSON.stringify(data.user)
-    );
+    localStorage.setItem("safeops_token", data.token);
+    localStorage.setItem("safeops_user", JSON.stringify(data.user));
 
     setUser(data.user);
 
     return data;
   };
 
-  // =========================
   // REGISTER
-  // =========================
-  const register = async ({
-    name,
-    email,
-    phone,
-    password,
-  }) => {
+  const register = async ({ name, email, phone, password }) => {
     const response = await axios.post(
-      `${API_URL}/api/auth/register`,
-      {
-        name,
-        email,
-        phone,
-        password,
-      },
-      {
-        withCredentials: true,
-      }
+      `${API_URL}/auth/register`,
+      { name, email, phone, password },
+      { withCredentials: true }
     );
 
     const data = response.data;
 
     if (!data.success || !data.token) {
-      throw new Error(
-        data.message || "Registration failed"
-      );
+      throw new Error(data.message || "Registration failed");
     }
 
-    localStorage.setItem(
-      "safeops_token",
-      data.token
-    );
-
-    localStorage.setItem(
-      "safeops_user",
-      JSON.stringify(data.user)
-    );
+    localStorage.setItem("safeops_token", data.token);
+    localStorage.setItem("safeops_user", JSON.stringify(data.user));
 
     setUser(data.user);
 
     return data;
   };
 
-  // =========================
   // LOGOUT
-  // =========================
   const logout = () => {
     localStorage.removeItem("safeops_token");
     localStorage.removeItem("safeops_user");
@@ -151,9 +112,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error(
-      "useAuth must be used inside AuthProvider"
-    );
+    throw new Error("useAuth must be used inside AuthProvider");
   }
 
   return context;

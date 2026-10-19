@@ -1,13 +1,16 @@
 import axios from "axios";
 
-const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5000/api",
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  "https://safeops-backend.onrender.com/api"
+).replace(/\/+$/, "");
 
+const api = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000,
 });
 
 api.interceptors.request.use(
@@ -25,7 +28,6 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("safeops_token");

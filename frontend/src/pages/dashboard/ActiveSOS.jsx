@@ -19,9 +19,10 @@ import Sidebar from "../../components/layout/Sidebar";
 import Card from "../../components/common/Card";
 import SOSButton from "../../components/common/SOSButton";
 
-const API_URL =
+const API_URL = (
   import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+  "https://safeops-backend.onrender.com/api"
+).replace(/\/+$/, "");
 
 const MAX_RECORDING_SECONDS = 30 * 60;
 
@@ -631,7 +632,7 @@ export default function ActiveSOS() {
       // -----------------------------------------------------
 
       const uploadUrl =
-        `${API_URL}/api/evidence`;
+        `${API_URL}/evidence`;
 
       console.log(
         "📤 Uploading to:",

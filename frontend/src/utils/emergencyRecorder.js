@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const API_URL =
+const API_URL = (
   import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+  "https://safeops-backend.onrender.com/api"
+).replace(/\/+$/, "");
 
 const MAX_RECORDING_SECONDS = 30 * 60;
 
@@ -582,26 +583,19 @@ export async function startEmergencyRecording({
 
         console.log(
           "📤 URL:",
-          `${API_URL}/api/evidence`
+          `${API_URL}/evidence`
         );
 
-        const response =
-          await axios.post(
-            `${API_URL}/api/evidence`,
-            formData,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-
-              withCredentials: true,
-
-              // IMPORTANT:
-              // Do NOT set Content-Type manually.
-              // Browser/Axios creates multipart boundary.
-            }
-          );
+        const response = await axios.post(
+          `${API_URL}/evidence`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true,
+          }
+        );
 
         console.log(
           "================================="

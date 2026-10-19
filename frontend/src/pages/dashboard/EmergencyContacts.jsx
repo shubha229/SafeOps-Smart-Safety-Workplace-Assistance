@@ -19,9 +19,10 @@ import Header from "../../components/layout/Header";
 import Sidebar from "../../components/layout/Sidebar";
 import Card from "../../components/common/Card";
 
-const API_URL =
+const API_URL = (
   import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+  "https://safeops-backend.onrender.com/api"
+).replace(/\/+$/, "");
 
 export default function EmergencyContacts() {
   const [contacts, setContacts] = useState([]);
@@ -82,7 +83,7 @@ export default function EmergencyContacts() {
       setError("");
 
       const response = await axios.get(
-        `${API_URL}/api/emergency-contacts`,
+        `${API_URL}/emergency-contacts`,
         getAuthConfig()
       );
 
@@ -159,7 +160,7 @@ export default function EmergencyContacts() {
       setSaving(true);
 
       const response = await axios.post(
-        `${API_URL}/api/emergency-contacts`,
+        `${API_URL}/emergency-contacts`,
         {
           name: form.name.trim(),
           relation: form.relation.trim(),
@@ -217,7 +218,7 @@ export default function EmergencyContacts() {
       setError("");
 
       const response = await axios.delete(
-        `${API_URL}/api/emergency-contacts/${id}`,
+        `${API_URL}/emergency-contacts/${id}`,
         getAuthConfig()
       );
 
@@ -301,7 +302,7 @@ export default function EmergencyContacts() {
       );
 
       const response = await axios.post(
-        `${API_URL}/api/twilio/test-call`,
+        `${API_URL}/twilio/test-call`,
         requestBody,
         getAuthConfig()
       );
