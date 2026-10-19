@@ -1,11 +1,12 @@
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import path from "path";
-import twilioRoutes from "@/routes/twilio.routes";
 
+import twilioRoutes from "@/routes/twilio.routes";
 import authRoutes from "@/routes/auth.routes";
 import emergencyContactRoutes from "@/routes/emergencyContact.routes";
 import evidenceRoutes from "@/routes/evidence.routes";
@@ -16,13 +17,29 @@ const app = express();
    CORS
 ========================================================= */
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://safe-ops-smart-safety-workplace-ass-brown.vercel.app",
+  "https://safe-ops-smart-safety-workplace-ass.vercel.app",
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
-    ],
+    origin: allowedOrigins,
     credentials: true,
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
   })
 );
 
@@ -58,9 +75,7 @@ app.use(cookieParser());
 
 app.use(
   "/uploads",
-  express.static(
-    path.join(process.cwd(), "uploads")
-  )
+  express.static(path.join(process.cwd(), "uploads"))
 );
 
 /* =========================================================
@@ -79,27 +94,16 @@ app.get("/", (_req, res) => {
 ========================================================= */
 
 // Authentication
-app.use(
-  "/api/auth",
-  authRoutes
-);
+app.use("/api/auth", authRoutes);
 
 // Emergency Contacts
-app.use(
-  "/api/emergency-contacts",
-  emergencyContactRoutes
-);
+app.use("/api/emergency-contacts", emergencyContactRoutes);
 
 // Evidence / Emergency Recordings
-app.use(
-  "/api/evidence",
-  evidenceRoutes
-);
+app.use("/api/evidence", evidenceRoutes);
+
 // Twilio
-app.use(
-  "/api/twilio",
-  twilioRoutes
-);
+app.use("/api/twilio", twilioRoutes);
 
 /* =========================================================
    404 HANDLER
@@ -127,9 +131,7 @@ app.use(
 
     res.status(err.status || 500).json({
       success: false,
-      message:
-        err.message ||
-        "Internal Server Error",
+      message: err.message || "Internal Server Error",
     });
   }
 );
