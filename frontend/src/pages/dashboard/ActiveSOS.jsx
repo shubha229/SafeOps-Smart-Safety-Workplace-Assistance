@@ -631,7 +631,7 @@ export default function ActiveSOS() {
       // -----------------------------------------------------
 
       const uploadUrl =
-        `${API_URL}/evidence`;
+        `${API_URL}/api/evidence`;
 
       console.log(
         "📤 Uploading to:",

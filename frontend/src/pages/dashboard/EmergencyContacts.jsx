@@ -82,7 +82,7 @@ export default function EmergencyContacts() {
       setError("");
 
       const response = await axios.get(
-        `${API_URL}/emergency-contacts`,
+        `${API_URL}/api/emergency-contacts`,
         getAuthConfig()
       );
 
@@ -159,7 +159,7 @@ export default function EmergencyContacts() {
       setSaving(true);
 
       const response = await axios.post(
-        `${API_URL}/emergency-contacts`,
+        `${API_URL}/api/emergency-contacts`,
         {
           name: form.name.trim(),
           relation: form.relation.trim(),
@@ -217,7 +217,7 @@ export default function EmergencyContacts() {
       setError("");
 
       const response = await axios.delete(
-        `${API_URL}/emergency-contacts/${id}`,
+        `${API_URL}/api/emergency-contacts/${id}`,
         getAuthConfig()
       );
 
@@ -301,7 +301,7 @@ export default function EmergencyContacts() {
       );
 
       const response = await axios.post(
-        `${API_URL}/twilio/test-call`,
+        `${API_URL}/api/twilio/test-call`,
         requestBody,
         getAuthConfig()
       );

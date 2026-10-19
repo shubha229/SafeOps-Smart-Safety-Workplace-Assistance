@@ -582,12 +582,12 @@ export async function startEmergencyRecording({
 
         console.log(
           "📤 URL:",
-          `${API_URL}/evidence`
+          `${API_URL}/api/evidence`
         );
 
         const response =
           await axios.post(
-            `${API_URL}/evidence`,
+            `${API_URL}/api/evidence`,
             formData,
             {
               headers: {
