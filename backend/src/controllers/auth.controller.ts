@@ -1,4 +1,6 @@
+
 import { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 import {
@@ -23,20 +25,34 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+    // Check for an existing email
+    const existingEmail = await prisma.user.findUnique({
+      where: { email },
     });
 
-    if (existingUser) {
+    if (existingEmail) {
       return res.status(409).json({
         success: false,
-        message: "Email already exists.",
+        message: "Email already exists. Please sign in instead.",
       });
     }
 
-    // Validate Password
+    // Check for an existing phone number when supplied
+    if (phone) {
+      const existingPhone = await prisma.user.findUnique({
+        where: { phone },
+      });
+
+      if (existingPhone) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "This phone number is already registered. Please sign in or use another number.",
+        });
+      }
+    }
+
+    // Validate password
     const passwordValidation = validatePassword(password);
 
     if (!passwordValidation.valid) {
@@ -75,7 +91,38 @@ export const register = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Registration error:", error);
+
+    // Handle unique constraint conflicts, including concurrent requests
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const target = error.meta?.target;
+      const fields = Array.isArray(target)
+        ? target.map(String)
+        : [String(target ?? "")];
+
+      if (fields.includes("phone")) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "This phone number is already registered. Please sign in or use another number.",
+        });
+      }
+
+      if (fields.includes("email")) {
+        return res.status(409).json({
+          success: false,
+          message: "Email already exists. Please sign in instead.",
+        });
+      }
+
+      return res.status(409).json({
+        success: false,
+        message: "An account with these details already exists.",
+      });
+    }
 
     return res.status(500).json({
       success: false,
@@ -99,9 +146,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (!user) {
@@ -111,10 +156,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const isMatch = await comparePassword(
-      password,
-      user.password
-    );
+    const isMatch = await comparePassword(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({
@@ -124,9 +166,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     await prisma.user.update({
-      where: {
-        id: user.id,
-      },
+      where: { id: user.id },
       data: {
         lastLogin: new Date(),
         loginCount: {
@@ -153,7 +193,7 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
 
     return res.status(500).json({
       success: false,
