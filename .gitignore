@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+.DS_Store
+
+# Uploads
+uploads/
+
+# Local database
+prisma/dev.db
+prisma/dev.db-journal
+
+# Android build files
+android/.gradle/
+android/local.properties
