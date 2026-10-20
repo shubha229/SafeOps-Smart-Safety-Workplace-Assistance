@@ -66,7 +66,13 @@ async function telegramRequest(
       );
     }
 
-    console.error(`Telegram ${method} request failed:`, error);
+    console.error(`Telegram ${method} request failed:`, {
+      message: error instanceof Error ? error.message : String(error),
+      cause:
+        error instanceof Error && error.cause
+          ? String(error.cause)
+          : "No underlying cause provided",
+    });
 
     throw error;
   } finally {
