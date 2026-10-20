@@ -39,14 +39,17 @@ async function telegramRequest(
         }
       );
     } catch (error) {
-      console.error("Telegram network connection failed:", error);
+      console.error(
+        `Telegram ${method} network connection failed:`,
+        error
+      );
 
       if (error instanceof Error) {
         console.error("Error name:", error.name);
         console.error("Error message:", error.message);
+        console.error("Underlying cause:", error.cause);
 
         const cause = error.cause;
-        console.error("Underlying cause:", cause);
 
         if (
           cause &&
@@ -104,7 +107,7 @@ async function telegramRequest(
       message: error instanceof Error ? error.message : String(error),
       cause:
         error instanceof Error && error.cause
-          ? String(error.cause)
+          ? error.cause
           : "No underlying cause provided",
     });
 
@@ -139,7 +142,7 @@ export async function sendTelegramSOS(
   const mapsUrl =
     `https://www.google.com/maps?q=${latitude},${longitude}`;
 
-  // Send the SOS text alert.
+  // Step 1: Send the SOS text with the GPS map link.
   await telegramRequest("sendMessage", {
     chat_id: chatId,
     text:
@@ -151,17 +154,29 @@ export async function sendTelegramSOS(
 
   console.log("Telegram SOS text alert delivered.");
 
-  // Send the actual Telegram location pin.
-  await telegramRequest("sendLocation", {
-    chat_id: chatId,
-    latitude,
-    longitude,
-  });
+  // Step 2: Attempt to send a separate Telegram location pin.
+  let locationPinSent = false;
 
-  console.log("Telegram SOS location pin delivered.");
+  try {
+    await telegramRequest("sendLocation", {
+      chat_id: chatId,
+      latitude,
+      longitude,
+    });
 
+    locationPinSent = true;
+    console.log("Telegram SOS location pin delivered.");
+  } catch (error) {
+    console.error("Telegram location pin failed:", error);
+  }
+
+  // The text alert already succeeded, so report that accurately.
   return {
     success: true,
-    message: "SOS alert and location pin sent successfully.",
+    message: locationPinSent
+      ? "SOS text alert and location pin sent successfully."
+      : "SOS text alert sent with a Google Maps location link; the separate location pin could not be sent.",
+    locationPinSent,
+    mapsUrl,
   };
 }
