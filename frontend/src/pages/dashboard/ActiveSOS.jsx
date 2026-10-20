@@ -33,6 +33,7 @@ export default function ActiveSOS() {
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(null);
   const [sosStatus, setSosStatus] = useState("");
 
   const mediaRecorderRef = useRef(null);
@@ -353,90 +354,90 @@ export default function ActiveSOS() {
   };
 
   
-  
   const sendTelegramLocation = async () => {
     setSosStatus("Getting your current location...");
 
+    // Step 1: Get GPS independently of Telegram.
+    let position;
+
     try {
       if (!navigator.geolocation) {
-        throw new Error("GPS location is not supported.");
+        throw new Error("GPS location is not supported on this device.");
       }
 
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          (error) => {
-            const messages = {
-              1: "Location permission was denied.",
-              2: "Location is unavailable. Check your GPS.",
-              3: "Getting location timed out. Try again.",
-            };
-
-            reject(
-              new Error(
-                messages[error.code] || "Unable to get your location."
-              )
-            );
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 30000,
-            maximumAge: 10000,
-          }
-        );
+      position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 10000,
+        });
       });
+    } catch (error) {
+      const messages = {
+        1: "Location permission denied. Please allow location access.",
+        2: "GPS location is unavailable. Check your device settings.",
+        3: "GPS timed out. Please try again with location enabled.",
+      };
 
-      setSosStatus("Location found. Sending SOS alert...");
+      setSosStatus(
+        messages[error.code] ||
+          error.message ||
+          "Unable to get your GPS location."
+      );
+      return false;
+    }
 
-      const token = localStorage.getItem("safeops_token");
-      if (!token) throw new Error("Please log in again.");
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
 
+    // Show the coordinates immediately, before contacting Telegram.
+    setCurrentLocation({ latitude, longitude, mapsUrl });
+    setSosStatus("Location found. Attempting to send the SOS alert...");
+
+    const token = localStorage.getItem("safeops_token");
+
+    if (!token) {
+      setSosStatus(
+        "Your location is shown below, but you need to log in again to send the alert."
+      );
+      return false;
+    }
+
+    // Step 2: Try Telegram separately.
+    try {
       const response = await fetch(`${API_URL}/telegram/sos-location`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        }),
+        body: JSON.stringify({ latitude, longitude }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Telegram alert failed.");
-      }
-
-      if (data.locationPinSent === false) {
+      if (response.ok && data.success) {
         setSosStatus(
-          data.message ||
-            "SOS text alert sent with a Google Maps link, but the Telegram location pin could not be sent."
+          data.locationPinSent === false
+            ? "SOS text alert status reported by the server; the separate location pin could not be sent. Your coordinates are shown below."
+            : data.message || "SOS alert sent successfully."
         );
-      } else {
-        setSosStatus(
-          data.message || "SOS alert sent successfully."
-        );
+        return true;
       }
-
-      return true;
-    } catch (error) {
-      console.error("Telegram location alert failed:", error);
 
       setSosStatus(
-        `Location sharing failed: ${
-          error instanceof Error
-            ? error.message
-            : "Please try again."
-        }`
+        "Your location is shown below, but the server could not confirm delivery of the SOS alert."
       );
-
+      return false;
+    } catch {
+      // Never show raw network errors such as "fetch failed".
+      setSosStatus(
+        "Your location is shown below, but Telegram could not be reached. Please use the Maps link and contact your emergency contacts."
+      );
       return false;
     }
   };
-
-
 
   // =========================================================
   // ACTIVATE SOS
@@ -1025,7 +1026,28 @@ export default function ActiveSOS() {
                     <span>{sosStatus}</span>
                   </div>
                 )}
-
+                {currentLocation && (
+                  <div className="recording-saving" role="status">
+                    <MapPin size={20} />
+                      <div>
+                        <strong>Your current location</strong>
+                        <p>
+                          Latitude: {currentLocation.latitude.toFixed(6)}
+                        </p>
+                        <p>
+                          Longitude: {currentLocation.longitude.toFixed(6)}
+                        </p>
+                        <a
+                          href={currentLocation.mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open location in Google Maps
+                        </a>
+                      </div>
+                    </div>
+                  )
+                }
                 {/* RECORDING */}
 
                 {recording && (
@@ -1174,7 +1196,7 @@ export default function ActiveSOS() {
 
                       <span>
                         {active
-                          ? "Contacts notified"
+                          ? "Alert delivery not confirmed"
                           : "Ready to notify"}
                       </span>
                     </div>
@@ -1197,13 +1219,15 @@ export default function ActiveSOS() {
                       <strong>
                         Location sharing
                       </strong>
-
+                      
                       <span>
-                        {sosStatus === "Location sent successfully."
-                          ? "GPS location alert sent"
-                          : sosStatus.includes("failed")
-                            ? "Location sharing failed"
-                            : "Waiting for location confirmation"}
+                        {sosStatus.includes("could not be reached") ||
+                        sosStatus.includes("could not confirm") ||
+                        sosStatus.includes("failed")
+                          ? "Location alert delivery not confirmed"
+                          : currentLocation
+                            ? "GPS coordinates obtained"
+                            : "Waiting for location"}
                       </span>
                     </div>
                   </div>

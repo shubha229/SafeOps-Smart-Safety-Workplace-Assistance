@@ -34,6 +34,11 @@ import EmergencyStatus from "../../components/dashboard/EmergencyStatus";
 
 import { useAuth } from "../../context/AuthContext";
 
+const API_URL = (
+  import.meta.env.VITE_API_URL ||
+  "https://safeops-backend.onrender.com/api"
+).replace(/\/+$/, "");
+
 export default function Dashboard() {
   const { user } = useAuth();
 
@@ -45,7 +50,7 @@ export default function Dashboard() {
 
   const [saving, setSaving] =
     useState(false);
-
+  const [currentLocation, setCurrentLocation] = useState(null);
   const [recordingTime, setRecordingTime] =
     useState(0);
   
@@ -98,87 +103,88 @@ export default function Dashboard() {
     ).padStart(2, "0")}`;
   };
 
-  
-  
   const sendTelegramLocation = async () => {
-    setSosStatus("Getting your current location...");
     setTelegramError("");
+    setSosStatus("Getting your current location...");
+
+    // Step 1: Get GPS independently of Telegram.
+    let position;
 
     try {
       if (!navigator.geolocation) {
-        throw new Error("Location is not supported by this browser.");
+        throw new Error("GPS location is not supported on this device.");
       }
 
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          (error) => {
-            const messages = {
-              1: "Location permission was denied.",
-              2: "Location unavailable. Please check your GPS.",
-              3: "Location request timed out. Please try again.",
-            };
-
-            reject(
-              new Error(
-                messages[error.code] || "Unable to get your location."
-              )
-            );
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 30000,
-            maximumAge: 10000,
-          }
-        );
+      position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 10000,
+        });
       });
+    } catch (error) {
+      const messages = {
+        1: "Location permission denied. Please allow location access.",
+        2: "GPS location is unavailable. Check your device settings.",
+        3: "GPS timed out. Please try again with location enabled.",
+      };
 
-      setSosStatus("Location found. Sending SOS alert...");
+      setSosStatus(
+        messages[error.code] ||
+          error.message ||
+          "Unable to get your GPS location."
+      );
+      return false;
+    }
 
-      const token = localStorage.getItem("safeops_token");
-      if (!token) throw new Error("Please log in again.");
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
 
-      const API_URL = (
-        import.meta.env.VITE_API_URL ||
-        "https://safeops-backend.onrender.com/api"
-      ).replace(/\/+$/, "");
+    // Show the coordinates immediately, before contacting Telegram.
+    setCurrentLocation({ latitude, longitude, mapsUrl });
+    setSosStatus("Location found. Attempting to send the SOS alert...");
 
+    const token = localStorage.getItem("safeops_token");
+
+    if (!token) {
+      setSosStatus(
+        "Your location is shown below, but you need to log in again to send the alert."
+      );
+      return false;
+    }
+
+    // Step 2: Try Telegram separately.
+    try {
       const response = await fetch(`${API_URL}/telegram/sos-location`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        }),
+        body: JSON.stringify({ latitude, longitude }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Telegram alert failed.");
+      if (response.ok && data.success) {
+        setSosStatus(
+          data.locationPinSent === false
+            ? "SOS text alert status reported by the server; the separate location pin could not be sent. Your coordinates are shown below."
+            : data.message || "SOS alert sent successfully."
+        );
+        return true;
       }
 
-      if (data.locationPinSent === false) {
-        setSosStatus(
-          data.message ||
-            "SOS text alert sent with a Google Maps link, but the Telegram location pin could not be sent."
-        );
-      } else {
-        setSosStatus(
-          data.message || "SOS alert sent successfully."
-        );
-      }
-      return true;
-    } catch (error) {
-      console.error("Telegram location alert failed:", error);
-
-      setTelegramError(
-        error.message || "Unable to send your location."
+      setSosStatus(
+        "Your location is shown below, but the server could not confirm delivery of the SOS alert."
       );
-      setSosStatus("Location sharing failed.");
+      return false;
+    } catch {
+      // Never show raw network errors such as "fetch failed".
+      setSosStatus(
+        "Your location is shown below, but Telegram could not be reached. Please use the Maps link and contact your emergency contacts."
+      );
       return false;
     }
   };
@@ -498,13 +504,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {telegramError && (
-            <div className="auth-error" role="alert">
-              <MapPin size={18} />
-              <span>{telegramError}</span>
-            </div>
-          )}
-
           {/* =================================================
               MAIN GRID
           ================================================= */}
@@ -564,6 +563,29 @@ export default function Dashboard() {
                   <span>{sosStatus}</span>
                 </div>
               )}
+
+              {currentLocation && (
+                <div className="recording-saving" role="status">
+                  <MapPin size={20} />
+                    <div>
+                      <strong>Your current location</strong>
+                      <p>
+                        Latitude: {currentLocation.latitude.toFixed(6)}
+                      </p>
+                      <p>
+                        Longitude: {currentLocation.longitude.toFixed(6)}
+                      </p>
+                      <a
+                        href={currentLocation.mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open location in Google Maps
+                      </a>
+                    </div>
+                  </div>
+                )
+              }
 
               {/* RECORDING STATUS */}
               {sosActive && recordingStatus && (
@@ -639,9 +661,7 @@ export default function Dashboard() {
 
                   <CheckCircle2 size={16} />
 
-                  <span>
-                    Emergency contacts notified
-                  </span>
+                  <span>Emergency alerts attempted when available</span>
 
                 </div>
 
