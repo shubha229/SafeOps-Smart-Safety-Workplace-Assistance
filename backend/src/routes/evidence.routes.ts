@@ -6,6 +6,7 @@ import express, {
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { comparePassword } from "@/utils/password";
 
 import { prisma } from "@/lib/db";
 import {
@@ -435,6 +436,39 @@ router.delete(
         });
       }
 
+      const { password } = req.body ?? {};
+
+      if (typeof password !== "string" || !password) {
+        return res.status(400).json({
+          success: false,
+          message: "Password is required to delete evidence.",
+        });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { password: true },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found.",
+        });
+      }
+
+      const isValidPassword = await comparePassword(
+        password,
+        user.password
+      );
+
+      if (!isValidPassword) {
+        return res.status(401).json({
+          success: false,
+          message: "Incorrect password. Evidence was not deleted.",
+        });
+      }
+
       // -----------------------------------------------------
       // DELETE PHYSICAL FILE
       // -----------------------------------------------------
@@ -450,13 +484,15 @@ router.delete(
           filename
         );
 
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      try {
+        await fs.promises.unlink(filePath);
+        console.log("🗑️ File deleted:", filePath);
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
 
-        console.log(
-          "🗑️ File deleted:",
-          filePath
-        );
+        if (code !== "ENOENT") {
+          throw error;
+        }
       }
 
       // -----------------------------------------------------

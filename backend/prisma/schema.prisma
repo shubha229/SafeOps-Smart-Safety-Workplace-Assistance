@@ -81,12 +81,20 @@ model EmergencyContact {
   @@map("emergency_contacts")
 }
 
+
 model Evidence {
   id          String  @id @default(cuid())
   userId      String
   title       String
   description String?
   fileUrl     String
+
+  // Encrypted recording data stored in PostgreSQL
+  fileData    Bytes?
+  encryptionIv String?
+  authTag      String?
+  mimeType     String?
+  isEncrypted  Boolean @default(false)
 
   // Emergency location
   latitude  Float?
@@ -100,3 +108,4 @@ model Evidence {
   @@index([userId])
   @@map("evidence")
 }
+
