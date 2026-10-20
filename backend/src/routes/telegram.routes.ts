@@ -45,7 +45,9 @@ router.post(
 
       return res.status(502).json({
         success: false,
-        message: "Unable to send Telegram SOS alert.",
+        message:
+          error?.message ||
+          "Unable to send Telegram SOS alert.",
       });
     }
   }
