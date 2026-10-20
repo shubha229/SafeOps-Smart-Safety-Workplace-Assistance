@@ -105,7 +105,6 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem("safeops_token");
     localStorage.removeItem("safeops_user");
-
     setUser(null);
   };
 

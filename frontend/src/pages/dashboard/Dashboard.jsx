@@ -48,6 +48,8 @@ export default function Dashboard() {
 
   const [recordingTime, setRecordingTime] =
     useState(0);
+  
+  const [telegramError, setTelegramError] = useState("");
 
   const [recordingError, setRecordingError] =
     useState("");
@@ -99,17 +101,32 @@ export default function Dashboard() {
   const sendTelegramLocation = async () => {
     try {
       if (!navigator.geolocation) {
-        throw new Error("Geolocation is not supported by this browser.");
+        throw new Error(
+          "Location is not supported by this browser."
+        );
       }
 
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
           resolve,
-          reject,
+          (error) => {
+            const messages = {
+              1: "Location permission was denied.",
+              2: "Your current location is unavailable. Check GPS.",
+              3: "Getting your location timed out. Try again.",
+            };
+
+            reject(
+              new Error(
+                messages[error.code] ||
+                  "Unable to get your current location."
+              )
+            );
+          },
           {
             enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0,
+            timeout: 30000,
+            maximumAge: 10000,
           }
         );
       });
@@ -117,15 +134,13 @@ export default function Dashboard() {
       const token = localStorage.getItem("safeops_token");
 
       if (!token) {
-        throw new Error("Authentication token not found. Please log in again.");
+        throw new Error("Please log in again.");
       }
 
-      
       const API_URL = (
         import.meta.env.VITE_API_URL ||
         "https://safeops-backend.onrender.com/api"
       ).replace(/\/+$/, "");
-
 
       const response = await fetch(
         `${API_URL}/telegram/sos-location`,
@@ -144,20 +159,30 @@ export default function Dashboard() {
 
       const data = await response.json();
 
-      console.log("Telegram HTTP status:", response.status);
-      console.log("Telegram response:", data);
+      console.log("Telegram location HTTP status:", response.status);
+      console.log("Telegram location response:", data);
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "Telegram alert failed.");
+        throw new Error(
+          data.message || "Telegram location delivery failed."
+        );
       }
 
-      console.log("Telegram SOS location sent successfully.");
+      console.log("Telegram location sent successfully.");
+
+      setTelegramError("");
+
+      return true;
     } catch (error) {
       console.error("Telegram location alert failed:", error);
 
-      setRecordingError(
-        `Recording started, but Telegram alert failed: ${error.message}`
+      setTelegramError(
+        `Telegram location failed: ${
+          error.message || "Unknown error"
+        }`
       );
+
+      return false;
     }
   };
 
@@ -494,14 +519,16 @@ export default function Dashboard() {
           ================================================= */}
 
           {recordingError && (
-            <div className="auth-error">
-
+            <div className="auth-error" role="alert">
               <ShieldAlert size={18} />
+              <span>{recordingError}</span>
+            </div>
+          )}
 
-              <span>
-                {recordingError}
-              </span>
-
+          {telegramError && (
+            <div className="auth-error" role="alert">
+              <MapPin size={18} />
+              <span>{telegramError}</span>
             </div>
           )}
 
@@ -631,16 +658,13 @@ export default function Dashboard() {
 
               {sosActive &&
                 !recording &&
-                !saving && (
+                !saving &&
+                !recordingError && (
                   <div className="recording-saving">
-
                     <CheckCircle2 size={21} />
-
                     Emergency recording saved.
-
                   </div>
                 )}
-
               {/* SOS INFORMATION */}
 
               <div className="sos-info">
@@ -660,7 +684,7 @@ export default function Dashboard() {
                   <MapPin size={16} />
 
                   <span>
-                    Live location automatically shared
+                    GPS location sent to Telegram when available
                   </span>
 
                 </div>
@@ -1054,7 +1078,7 @@ export default function Dashboard() {
                   </strong>
 
                   <span>
-                    Emergency location sharing is ready
+                    GPS location sharing is available for SOS alerts
                   </span>
 
                 </div>
