@@ -1,4 +1,3 @@
-
 import {
   createContext,
   useContext,
@@ -15,6 +14,8 @@ const API_URL = (
   "https://safeops-backend.onrender.com/api"
 ).replace(/\/+$/, "");
 
+console.log("SafeOps API base URL:", API_URL);
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,7 @@ export function AuthProvider({ children }) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (error) {
-        console.error("Invalid stored user", error);
+        console.error("Invalid stored user:", error);
 
         localStorage.removeItem("safeops_token");
         localStorage.removeItem("safeops_user");
@@ -42,8 +43,12 @@ export function AuthProvider({ children }) {
 
   // LOGIN
   const login = async (email, password) => {
+    const url = `${API_URL}/auth/login`;
+
+    console.log("SafeOps login request:", url);
+
     const response = await axios.post(
-      `${API_URL}/auth/login`,
+      url,
       { email, password },
       { withCredentials: true }
     );
@@ -55,7 +60,10 @@ export function AuthProvider({ children }) {
     }
 
     localStorage.setItem("safeops_token", data.token);
-    localStorage.setItem("safeops_user", JSON.stringify(data.user));
+    localStorage.setItem(
+      "safeops_user",
+      JSON.stringify(data.user)
+    );
 
     setUser(data.user);
 
@@ -64,8 +72,12 @@ export function AuthProvider({ children }) {
 
   // REGISTER
   const register = async ({ name, email, phone, password }) => {
+    const url = `${API_URL}/auth/register`;
+
+    console.log("SafeOps registration request:", url);
+
     const response = await axios.post(
-      `${API_URL}/auth/register`,
+      url,
       { name, email, phone, password },
       { withCredentials: true }
     );
@@ -73,11 +85,16 @@ export function AuthProvider({ children }) {
     const data = response.data;
 
     if (!data.success || !data.token) {
-      throw new Error(data.message || "Registration failed");
+      throw new Error(
+        data.message || "Registration failed"
+      );
     }
 
     localStorage.setItem("safeops_token", data.token);
-    localStorage.setItem("safeops_user", JSON.stringify(data.user));
+    localStorage.setItem(
+      "safeops_user",
+      JSON.stringify(data.user)
+    );
 
     setUser(data.user);
 
@@ -112,7 +129,9 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
+    throw new Error(
+      "useAuth must be used inside AuthProvider"
+    );
   }
 
   return context;
