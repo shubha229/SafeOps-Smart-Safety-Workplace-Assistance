@@ -633,21 +633,6 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* SAVING */}
-
-              {saving && (
-                <div className="recording-saving">
-
-                  <Loader2
-                    size={22}
-                    className="spin"
-                  />
-
-                  Saving emergency recording...
-
-                </div>
-              )}
-
               {/* SOS INFORMATION */}
 
               <div className="sos-info">

@@ -24,17 +24,40 @@ async function telegramRequest(
   try {
     console.log(`Sending Telegram request: ${method}`);
 
-    const response = await fetch(
-      `${TELEGRAM_API}/bot${token}/${method}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal,
+    let response: Response;
+
+    try {
+      response = await fetch(
+        `${TELEGRAM_API}/bot${token}/${method}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        }
+      );
+    } catch (error) {
+      console.error("Telegram network connection failed:", error);
+
+      if (error instanceof Error) {
+        console.error("Network error name:", error.name);
+        console.error("Network error message:", error.message);
+        console.error("Network error cause:", error.cause);
+
+        const cause = error.cause;
+
+        if (cause instanceof AggregateError) {
+          console.error(
+            "Individual network errors:",
+            cause.errors
+          );
+        }
       }
-    );
+
+      throw error;
+    }
 
     const responseText = await response.text();
 
