@@ -7,6 +7,9 @@ import cookieParser from "cookie-parser";
 import path from "path";
 
 import twilioRoutes from "@/routes/twilio.routes";
+
+import telegramRoutes from "./routes/telegram.routes";
+
 import authRoutes from "@/routes/auth.routes";
 import emergencyContactRoutes from "@/routes/emergencyContact.routes";
 import evidenceRoutes from "@/routes/evidence.routes";
@@ -104,6 +107,9 @@ app.use("/api/evidence", evidenceRoutes);
 
 // Twilio
 app.use("/api/twilio", twilioRoutes);
+
+// Telegram
+app.use("/api/telegram", telegramRoutes);
 
 /* =========================================================
    404 HANDLER

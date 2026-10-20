@@ -351,17 +351,80 @@ export default function ActiveSOS() {
     }
   };
 
+  
+  const sendTelegramLocation = async () => {
+    try {
+      if (!navigator.geolocation) {
+        throw new Error("GPS location is not supported.");
+      }
+
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          }
+        );
+      });
+
+      const token = localStorage.getItem("safeops_token");
+
+      if (!token) {
+        throw new Error("Please log in again.");
+      }
+
+      const response = await fetch(
+        `${API_URL}/telegram/sos-location`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Telegram alert failed."
+        );
+      }
+
+      console.log("Telegram SOS location sent.");
+    } catch (error) {
+      console.error(
+        "Telegram location alert failed:",
+        error.message
+      );
+
+      setError(
+        "SOS recording started, but Telegram location could not be sent. Check GPS permission and connection."
+      );
+    }
+  };
+
+
   // =========================================================
   // ACTIVATE SOS
   // =========================================================
 
   const activateSOS = async () => {
-    console.log(
-      "🚨 SOS ACTIVATED"
-    );
+    console.log("🚨 SOS ACTIVATED");
 
     setError("");
     setSaved(false);
+
+    // Start recording without waiting for Telegram.
+    void sendTelegramLocation();
 
     await startRecording();
   };
