@@ -414,7 +414,14 @@ export default function ActiveSOS() {
     } catch (error) {
       console.error("Telegram location alert failed:", error);
 
-      setSosStatus(error.message || "Location sharing failed.");
+      setSosStatus(
+        `Location sharing failed: ${
+          error instanceof Error
+            ? error.message
+            : "Please try again."
+        }`
+      );
+
       return false;
     }
   };
@@ -995,7 +1002,7 @@ export default function ActiveSOS() {
                     />
                   )
                 }
-                              
+
                 {/* SOS LOCATION STATUS */}
                 {sosStatus && (
                   <div className="recording-saving" role="status">
@@ -1008,14 +1015,6 @@ export default function ActiveSOS() {
                     <span>{sosStatus}</span>
                   </div>
                 )}
-
-                {/* RECORDING */}
-                {recording && (
-                  <div className="recording-panel">
-                    {/* Keep your existing recording-panel content here */}
-                  </div>
-                )}
-
 
                 {/* RECORDING */}
 
@@ -1073,22 +1072,6 @@ export default function ActiveSOS() {
 
                       Stop & Save
                     </button>
-
-                  </div>
-                )}
-
-                {/* SAVING */}
-
-                {saving && (
-                  <div className="recording-saving">
-
-                    <Loader2
-                      size={22}
-                      className="spin"
-                    />
-
-                    Saving emergency
-                    recording...
 
                   </div>
                 )}
@@ -1206,9 +1189,11 @@ export default function ActiveSOS() {
                       </strong>
 
                       <span>
-                        {active
-                          ? "Live location transmitted"
-                          : "Ready for transmission"}
+                        {sosStatus === "Location sent successfully."
+                          ? "GPS location alert sent"
+                          : sosStatus.includes("failed")
+                            ? "Location sharing failed"
+                            : "Waiting for location confirmation"}
                       </span>
                     </div>
                   </div>

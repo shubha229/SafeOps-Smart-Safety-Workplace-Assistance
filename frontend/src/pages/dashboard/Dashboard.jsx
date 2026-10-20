@@ -50,10 +50,10 @@ export default function Dashboard() {
     useState(0);
   
   const [sosStatus, setSosStatus] = useState("");
+  const [recordingStatus, setRecordingStatus] = useState("");
   const [telegramError, setTelegramError] = useState("");
 
-  const [recordingError, setRecordingError] =
-    useState("");
+  const [recordingError, setRecordingError] = useState("");
 
   const navigate = useNavigate();
 
@@ -205,23 +205,36 @@ export default function Dashboard() {
           setRecordingTime(seconds);
         },
 
+        onStarted: () => {
+          console.log("Emergency recording started");
+          setRecording(true);
+          setSaving(false);
+          setRecordingTime(0);
+          setRecordingStatus("Emergency recording active.");
+        },
+
+        onTimeUpdate: (seconds) => {
+          setRecordingTime(seconds);
+        },
+
         onSaving: () => {
           setRecording(false);
           setSaving(true);
-          setSosStatus("Saving emergency recording...");
+          setRecordingStatus("Saving emergency recording...");
         },
 
         onSaved: (data) => {
           console.log("Emergency recording saved:", data);
           setRecording(false);
           setSaving(false);
-          setSosStatus("Emergency recording saved successfully.");
+          setRecordingStatus("Emergency recording saved successfully.");
         },
 
         onError: (message) => {
           console.error("Recording error:", message);
           setRecording(false);
           setSaving(false);
+          setRecordingStatus("");
           setRecordingError(message);
         },
       });
@@ -533,13 +546,40 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* SOS STATUS */}
+              
+              {/* TELEGRAM LOCATION STATUS */}
               {sosActive && sosStatus && (
                 <div className="recording-saving" role="status">
-                  {sosStatus.includes("Getting") && (
+                  {(sosStatus.includes("Getting") ||
+                    sosStatus.includes("Sending")) && (
                     <Loader2 size={20} className="spin" />
                   )}
+
+                  {sosStatus.includes("sent successfully") && (
+                    <CheckCircle2 size={20} />
+                  )}
+
+                  {sosStatus.includes("failed") && (
+                    <MapPin size={20} />
+                  )}
+
                   <span>{sosStatus}</span>
+                </div>
+              )}
+
+              {/* RECORDING STATUS */}
+              {sosActive && recordingStatus && (
+                <div className="recording-saving" role="status">
+                  {(saving ||
+                    recordingStatus.includes("Starting")) && (
+                    <Loader2 size={20} className="spin" />
+                  )}
+
+                  {recordingStatus.includes("saved successfully") && (
+                    <CheckCircle2 size={20} />
+                  )}
+
+                  <span>{recordingStatus}</span>
                 </div>
               )}
 
