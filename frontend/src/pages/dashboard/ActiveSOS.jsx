@@ -1027,27 +1027,40 @@ export default function ActiveSOS() {
                   </div>
                 )}
                 {currentLocation && (
-                  <div className="recording-saving" role="status">
-                    <MapPin size={20} />
+                  <div className="sos-location-card">
+                    <div className="sos-location-heading">
+                      <div className="sos-location-icon">
+                        <MapPin size={21} />
+                      </div>
                       <div>
-                        <strong>Your current location</strong>
-                        <p>
-                          Latitude: {currentLocation.latitude.toFixed(6)}
-                        </p>
-                        <p>
-                          Longitude: {currentLocation.longitude.toFixed(6)}
-                        </p>
-                        <a
-                          href={currentLocation.mapsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open location in Google Maps
-                        </a>
+                        <h3>Your current location</h3>
+                        <p>GPS coordinates captured</p>
                       </div>
                     </div>
-                  )
-                }
+
+                    <div className="sos-coordinates">
+                      <div className="sos-coordinate-item">
+                        <span>LATITUDE</span>
+                        <strong>{currentLocation.latitude.toFixed(6)}</strong>
+                      </div>
+                      <div className="sos-coordinate-item">
+                        <span>LONGITUDE</span>
+                        <strong>{currentLocation.longitude.toFixed(6)}</strong>
+                      </div>
+                    </div>
+
+                    <a
+                      className="sos-maps-link"
+                      href={currentLocation.mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MapPin size={17} />
+                      Open location in Google Maps
+                      <span>↗</span>
+                    </a>
+                  </div>
+                )}
                 {/* RECORDING */}
 
                 {recording && (
@@ -1219,7 +1232,7 @@ export default function ActiveSOS() {
                       <strong>
                         Location sharing
                       </strong>
-                      
+
                       <span>
                         {sosStatus.includes("could not be reached") ||
                         sosStatus.includes("could not confirm") ||

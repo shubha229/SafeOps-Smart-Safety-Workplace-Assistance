@@ -382,13 +382,8 @@ export default function Dashboard() {
             return;
           }
 
-          const API_URL = (
-            import.meta.env.VITE_API_URL ||
-            "https://safeops-backend.onrender.com/api"
-          ).replace(/\/+$/, "");
-
           const response = await fetch(
-            `${API_URL}/emergency-contacts`,
+            `/emergency-contacts`,
             {
               method: "GET",
               headers: {
@@ -565,27 +560,40 @@ export default function Dashboard() {
               )}
 
               {currentLocation && (
-                <div className="recording-saving" role="status">
-                  <MapPin size={20} />
+                <div className="sos-location-card">
+                  <div className="sos-location-heading">
+                    <div className="sos-location-icon">
+                      <MapPin size={21} />
+                    </div>
                     <div>
-                      <strong>Your current location</strong>
-                      <p>
-                        Latitude: {currentLocation.latitude.toFixed(6)}
-                      </p>
-                      <p>
-                        Longitude: {currentLocation.longitude.toFixed(6)}
-                      </p>
-                      <a
-                        href={currentLocation.mapsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open location in Google Maps
-                      </a>
+                      <h3>Your current location</h3>
+                      <p>GPS coordinates captured</p>
                     </div>
                   </div>
-                )
-              }
+
+                  <div className="sos-coordinates">
+                    <div className="sos-coordinate-item">
+                      <span>LATITUDE</span>
+                      <strong>{currentLocation.latitude.toFixed(6)}</strong>
+                    </div>
+                    <div className="sos-coordinate-item">
+                      <span>LONGITUDE</span>
+                      <strong>{currentLocation.longitude.toFixed(6)}</strong>
+                    </div>
+                  </div>
+
+                  <a
+                    className="sos-maps-link"
+                    href={currentLocation.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MapPin size={17} />
+                    Open location in Google Maps
+                    <span>↗</span>
+                  </a>
+                </div>
+              )}
 
               {/* RECORDING STATUS */}
               {sosActive && recordingStatus && (

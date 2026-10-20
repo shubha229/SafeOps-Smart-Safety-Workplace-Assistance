@@ -5602,3 +5602,274 @@ img {
     z-index: 1000;
   }
 }
+
+/* ===== SOS LOCATION CARD ===== */
+.sos-location-card {
+  margin: 22px 0;
+  padding: 22px;
+  color: #eaf1ff;
+  background: linear-gradient(145deg, #101e35, #0c1527);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.sos-location-heading,
+.sos-recording-header,
+.sos-recording-label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sos-location-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.13);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 14px;
+}
+
+.sos-location-heading h3 {
+  margin: 0 0 5px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.sos-location-heading p,
+.sos-recording-label p {
+  margin: 0;
+  color: #91a4c3;
+  font-size: 13px;
+}
+
+.sos-coordinates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.sos-coordinate-item {
+  min-width: 0;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  border-radius: 13px;
+}
+
+.sos-coordinate-item span {
+  display: block;
+  margin-bottom: 9px;
+  color: #8da3c5;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.sos-coordinate-item strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #f1f6ff;
+  font-size: clamp(14px, 2.5vw, 18px);
+  font-variant-numeric: tabular-nums;
+}
+
+.sos-maps-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 15px;
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.sos-maps-link:hover {
+  background: rgba(59, 130, 246, 0.19);
+  border-color: rgba(96, 165, 250, 0.55);
+}
+
+.sos-maps-link span {
+  margin-left: auto;
+}
+
+/* ===== RECORDING CARD ===== */
+.sos-recording-card {
+  margin: 22px 0;
+  padding: 22px;
+  color: #f8fafc;
+  background: linear-gradient(145deg, #241522, #111827 75%);
+  border: 1px solid rgba(251, 113, 133, 0.28);
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.sos-recording-header {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sos-recording-label {
+  min-width: 0;
+}
+
+.sos-recording-label strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+
+.sos-recording-label p {
+  line-height: 1.5;
+}
+
+.sos-recording-dot {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  background: #fb5368;
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px rgba(251, 83, 104, 0.12);
+  animation: sos-pulse 1.5s ease-in-out infinite;
+}
+
+.sos-live-badge {
+  padding: 6px 10px;
+  color: #fda4af;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(251, 113, 133, 0.25);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.sos-recording-timer {
+  margin: 25px 0 16px;
+  font-size: clamp(42px, 8vw, 58px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sos-recording-progress {
+  height: 5px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 99px;
+}
+
+.sos-recording-progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, #fb5368, #fda4af);
+  border-radius: inherit;
+  transition: width 1s linear;
+}
+
+.sos-recording-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 20px 0;
+  color: #c3cfe0;
+  font-size: 13px;
+}
+
+.sos-recording-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sos-recording-meta svg {
+  color: #fda4af;
+}
+
+.sos-stop-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 13px 18px;
+  color: #fff;
+  background: linear-gradient(135deg, #e84760, #c92d49);
+  border: 1px solid rgba(255, 140, 155, 0.35);
+  border-radius: 13px;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 7px 18px rgba(201, 45, 73, 0.2);
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.sos-stop-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.sos-stop-button:active {
+  transform: scale(0.99);
+}
+
+.sos-stop-button:focus-visible,
+.sos-maps-link:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+@keyframes sos-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(251, 83, 104, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(251, 83, 104, 0.03);
+  }
+}
+
+@media (max-width: 480px) {
+  .sos-location-card,
+  .sos-recording-card {
+    padding: 17px;
+    border-radius: 16px;
+  }
+
+  .sos-coordinates {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .sos-coordinate-item {
+    padding: 13px;
+  }
+
+  .sos-recording-meta {
+    gap: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sos-recording-dot {
+    animation: none;
+  }
+
+  .sos-maps-link,
+  .sos-stop-button,
+  .sos-recording-progress > div {
+    transition: none;
+  }
+}
