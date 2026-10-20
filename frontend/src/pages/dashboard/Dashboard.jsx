@@ -95,6 +95,73 @@ export default function Dashboard() {
     ).padStart(2, "0")}`;
   };
 
+  
+  const sendTelegramLocation = async () => {
+    try {
+      if (!navigator.geolocation) {
+        throw new Error("Geolocation is not supported by this browser.");
+      }
+
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0,
+          }
+        );
+      });
+
+      const token = localStorage.getItem("safeops_token");
+
+      if (!token) {
+        throw new Error("Authentication token not found. Please log in again.");
+      }
+
+      
+      const API_URL = (
+        import.meta.env.VITE_API_URL ||
+        "https://safeops-backend.onrender.com/api"
+      ).replace(/\/+$/, "");
+
+
+      const response = await fetch(
+        `${API_URL}/telegram/sos-location`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("Telegram HTTP status:", response.status);
+      console.log("Telegram response:", data);
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Telegram alert failed.");
+      }
+
+      console.log("Telegram SOS location sent successfully.");
+    } catch (error) {
+      console.error("Telegram location alert failed:", error);
+
+      setRecordingError(
+        `Recording started, but Telegram alert failed: ${error.message}`
+      );
+    }
+  };
+
+
   // =========================================================
   // SOS ACTIVATION
   // =========================================================
@@ -106,6 +173,9 @@ export default function Dashboard() {
 
     setSosActive(true);
     setRecordingError("");
+
+    // Send GPS location to Telegram independently.
+    void sendTelegramLocation();
 
     const recorder =
       await startEmergencyRecording({
@@ -308,10 +378,13 @@ export default function Dashboard() {
             return;
           }
 
-          const API_URL = import.meta.env.VITE_API_URL?.replace(/\/+$/, "");
+          const API_URL = (
+            import.meta.env.VITE_API_URL ||
+            "https://safeops-backend.onrender.com/api"
+          ).replace(/\/+$/, "");
 
           const response = await fetch(
-            `${API_URL}/api/emergency-contacts`,
+            `${API_URL}/emergency-contacts`,
             {
               method: "GET",
               headers: {
