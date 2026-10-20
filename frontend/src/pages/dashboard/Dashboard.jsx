@@ -20,6 +20,8 @@ import {
   useState,
 } from "react";
 
+import { useNavigate } from "react-router-dom";
+
 import {
   startEmergencyRecording,
 } from "../../utils/emergencyRecorder";
@@ -49,6 +51,8 @@ export default function Dashboard() {
 
   const [recordingError, setRecordingError] =
     useState("");
+
+  const navigate = useNavigate();
 
   // =========================================================
   // DEVICE BATTERY
@@ -755,16 +759,10 @@ export default function Dashboard() {
 
               <button
                 className="outline-action"
-                onClick={() =>
-                  window.location.href =
-                    "/dashboard/contacts"
-                }
+                onClick={() => navigate("/dashboard/contacts")}
               >
-
                 Manage Emergency Contacts
-
                 <ArrowUpRight size={16} />
-
               </button>
 
             </Card>
