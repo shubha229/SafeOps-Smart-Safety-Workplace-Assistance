@@ -42,16 +42,27 @@ async function telegramRequest(
       console.error("Telegram network connection failed:", error);
 
       if (error instanceof Error) {
-        console.error("Network error name:", error.name);
-        console.error("Network error message:", error.message);
-        console.error("Network error cause:", error.cause);
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
 
         const cause = error.cause;
+        console.error("Underlying cause:", cause);
 
-        if (cause instanceof AggregateError) {
+        if (
+          cause &&
+          typeof cause === "object" &&
+          "errors" in cause &&
+          Array.isArray(cause.errors)
+        ) {
           console.error(
             "Individual network errors:",
-            cause.errors
+            cause.errors.map((item) => ({
+              name: item?.name,
+              message: item?.message,
+              code: item?.code,
+              address: item?.address,
+              port: item?.port,
+            }))
           );
         }
       }
