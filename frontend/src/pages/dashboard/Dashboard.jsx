@@ -49,6 +49,7 @@ export default function Dashboard() {
   const [recordingTime, setRecordingTime] =
     useState(0);
   
+  const [sosStatus, setSosStatus] = useState("");
   const [telegramError, setTelegramError] = useState("");
 
   const [recordingError, setRecordingError] =
@@ -98,12 +99,14 @@ export default function Dashboard() {
   };
 
   
+  
   const sendTelegramLocation = async () => {
+    setSosStatus("Getting your current location...");
+    setTelegramError("");
+
     try {
       if (!navigator.geolocation) {
-        throw new Error(
-          "Location is not supported by this browser."
-        );
+        throw new Error("Location is not supported by this browser.");
       }
 
       const position = await new Promise((resolve, reject) => {
@@ -112,14 +115,13 @@ export default function Dashboard() {
           (error) => {
             const messages = {
               1: "Location permission was denied.",
-              2: "Your current location is unavailable. Check GPS.",
-              3: "Getting your location timed out. Try again.",
+              2: "Location unavailable. Please check your GPS.",
+              3: "Location request timed out. Please try again.",
             };
 
             reject(
               new Error(
-                messages[error.code] ||
-                  "Unable to get your current location."
+                messages[error.code] || "Unable to get your location."
               )
             );
           },
@@ -131,150 +133,110 @@ export default function Dashboard() {
         );
       });
 
-      const token = localStorage.getItem("safeops_token");
+      setSosStatus("Location found. Sending SOS alert...");
 
-      if (!token) {
-        throw new Error("Please log in again.");
-      }
+      const token = localStorage.getItem("safeops_token");
+      if (!token) throw new Error("Please log in again.");
 
       const API_URL = (
         import.meta.env.VITE_API_URL ||
         "https://safeops-backend.onrender.com/api"
       ).replace(/\/+$/, "");
 
-      const response = await fetch(
-        `${API_URL}/telegram/sos-location`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/telegram/sos-location`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }),
+      });
 
       const data = await response.json();
 
-      console.log("Telegram location HTTP status:", response.status);
-      console.log("Telegram location response:", data);
-
       if (!response.ok || !data.success) {
-        throw new Error(
-          data.message || "Telegram location delivery failed."
-        );
+        throw new Error(data.message || "Telegram alert delivery failed.");
       }
 
-      console.log("Telegram location sent successfully.");
-
-      setTelegramError("");
-
+      setSosStatus("Location sent successfully.");
       return true;
     } catch (error) {
       console.error("Telegram location alert failed:", error);
 
       setTelegramError(
-        `Telegram location failed: ${
-          error.message || "Unknown error"
-        }`
+        error.message || "Unable to send your location."
       );
-
+      setSosStatus("Location sharing failed.");
       return false;
     }
   };
-
 
   // =========================================================
   // SOS ACTIVATION
   // =========================================================
 
   const handleSOS = async () => {
-    console.log(
-      "🚨🚨🚨 SOS EMERGENCY ACTIVATED 🚨🚨🚨"
-    );
+    console.log("SOS emergency activated");
 
     setSosActive(true);
+    setSosStatus("Getting your location and starting recording...");
+    setTelegramError("");
     setRecordingError("");
+    setRecording(false);
+    setSaving(false);
+    setRecordingTime(0);
 
-    // Send GPS location to Telegram independently.
+    // Get GPS location and send Telegram alert independently.
     void sendTelegramLocation();
 
-    const recorder =
-      await startEmergencyRecording({
-        // -----------------------------------------
-        // RECORDING STARTED
-        // -----------------------------------------
-
+    try {
+      const recorder = await startEmergencyRecording({
         onStarted: () => {
-          console.log(
-            "🔴 RECORDING STARTED FROM DASHBOARD"
-          );
-
+          console.log("Emergency recording started");
           setRecording(true);
           setSaving(false);
           setRecordingTime(0);
         },
 
-        // -----------------------------------------
-        // TIMER
-        // -----------------------------------------
-
         onTimeUpdate: (seconds) => {
           setRecordingTime(seconds);
         },
 
-        // -----------------------------------------
-        // SAVING
-        // -----------------------------------------
-
         onSaving: () => {
-          console.log(
-            "💾 SAVING RECORDING..."
-          );
-
           setRecording(false);
           setSaving(true);
+          setSosStatus("Saving emergency recording...");
         },
-
-        // -----------------------------------------
-        // SAVED
-        // -----------------------------------------
 
         onSaved: (data) => {
-          console.log(
-            "✅ RECORDING SAVED:",
-            data
-          );
-
+          console.log("Emergency recording saved:", data);
           setRecording(false);
           setSaving(false);
-
-          alert(
-            "Emergency recording saved successfully."
-          );
+          setSosStatus("Emergency recording saved successfully.");
         },
 
-        // -----------------------------------------
-        // ERROR
-        // -----------------------------------------
-
         onError: (message) => {
-          console.error(
-            "❌ RECORDING ERROR:",
-            message
-          );
-
+          console.error("Recording error:", message);
           setRecording(false);
           setSaving(false);
-
           setRecordingError(message);
         },
       });
 
-    recorderRef.current = recorder;
+      recorderRef.current = recorder;
+    } catch (error) {
+      console.error("Unable to start recording:", error);
+      setRecording(false);
+      setSaving(false);
+      setRecordingError(
+        error instanceof Error
+          ? error.message
+          : "Unable to start emergency recording."
+      );
+    }
   };
 
   // =========================================================
@@ -543,36 +505,27 @@ export default function Dashboard() {
             ================================================= */}
 
             <Card className="dashboard-sos-card">
-
               <div className="card-header">
-
                 <div>
-
                   <span className="eyebrow">
                     EMERGENCY RESPONSE
                   </span>
-
                   <h2>
                     {sosActive
                       ? "Emergency recording active"
                       : "Need immediate help?"}
                   </h2>
-
                 </div>
 
                 <div className="card-icon danger-icon">
-
                   <ShieldAlert size={21} />
-
                 </div>
 
               </div>
 
               {/* SOS BUTTON */}
-
               {!sosActive && (
                 <div className="dashboard-sos-area">
-
                   <SOSButton
                     onTriggered={handleSOS}
                   />
@@ -580,37 +533,38 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* SOS STATUS */}
+              {sosActive && sosStatus && (
+                <div className="recording-saving" role="status">
+                  {sosStatus.includes("Getting") && (
+                    <Loader2 size={20} className="spin" />
+                  )}
+                  <span>{sosStatus}</span>
+                </div>
+              )}
+
               {/* RECORDING PANEL */}
 
               {recording && (
                 <div className="recording-panel">
-
                   <div className="recording-status">
-
                     <span className="recording-dot" />
-
                     <strong>
                       RECORDING
                     </strong>
-
                   </div>
 
                   <div className="recording-time">
-
                     {formatTime(
                       recordingTime
                     )}
-
                   </div>
 
                   <div className="recording-limit">
-
                     Maximum recording: 30:00
-
                   </div>
 
                   <div className="recording-features">
-
                     <span>
                       <Video size={16} />
                       Video
@@ -654,17 +608,6 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* ACTIVE STATUS */}
-
-              {sosActive &&
-                !recording &&
-                !saving &&
-                !recordingError && (
-                  <div className="recording-saving">
-                    <CheckCircle2 size={21} />
-                    Emergency recording saved.
-                  </div>
-                )}
               {/* SOS INFORMATION */}
 
               <div className="sos-info">
@@ -1094,13 +1037,10 @@ export default function Dashboard() {
               <div className="activity-row">
 
                 <div className="activity-icon purple">
-
                   <Shield size={17} />
-
                 </div>
 
                 <div className="activity-text">
-
                   <strong>
                     Security check completed
                   </strong>
@@ -1108,19 +1048,14 @@ export default function Dashboard() {
                   <span>
                     Account and device protection verified
                   </span>
-
                 </div>
 
                 <time>
                   5 min ago
                 </time>
-
               </div>
-
             </div>
-
           </Card>
-
         </div>
       </main>
 

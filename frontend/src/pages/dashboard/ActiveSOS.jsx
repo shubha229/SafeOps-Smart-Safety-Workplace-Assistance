@@ -33,6 +33,7 @@ export default function ActiveSOS() {
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [sosStatus, setSosStatus] = useState("");
 
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
@@ -352,7 +353,10 @@ export default function ActiveSOS() {
   };
 
   
+  
   const sendTelegramLocation = async () => {
+    setSosStatus("Getting your current location...");
+
     try {
       if (!navigator.geolocation) {
         throw new Error("GPS location is not supported.");
@@ -361,61 +365,60 @@ export default function ActiveSOS() {
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
           resolve,
-          reject,
+          (error) => {
+            const messages = {
+              1: "Location permission was denied.",
+              2: "Location is unavailable. Check your GPS.",
+              3: "Getting location timed out. Try again.",
+            };
+
+            reject(
+              new Error(
+                messages[error.code] || "Unable to get your location."
+              )
+            );
+          },
           {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
+            timeout: 30000,
+            maximumAge: 10000,
           }
         );
       });
 
+      setSosStatus("Location found. Sending SOS alert...");
+
       const token = localStorage.getItem("safeops_token");
+      if (!token) throw new Error("Please log in again.");
 
-      if (!token) {
-        throw new Error("Please log in again.");
-      }
-
-      const response = await fetch(
-        `${API_URL}/telegram/sos-location`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          }),
-        }
-      );
-
-      console.log("Telegram location endpoint:", `${API_URL}/telegram/sos-location`);
-      console.log("Telegram HTTP status:", response.status);
+      const response = await fetch(`${API_URL}/telegram/sos-location`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }),
+      });
 
       const data = await response.json();
 
-      console.log("Telegram response:", data);
-
       if (!response.ok || !data.success) {
-        throw new Error(
-          data.message || "Telegram alert failed."
-        );
+        throw new Error(data.message || "Telegram alert failed.");
       }
 
-      console.log("Telegram SOS location sent.");
+      setSosStatus("Location sent successfully.");
+      return true;
     } catch (error) {
-      console.error(
-        "Telegram location alert failed:",
-        error.message
-      );
+      console.error("Telegram location alert failed:", error);
 
-      setError(
-        "SOS recording started, but Telegram location could not be sent. Check GPS permission and connection."
-      );
+      setSosStatus(error.message || "Location sharing failed.");
+      return false;
     }
   };
+
 
 
   // =========================================================
@@ -423,14 +426,16 @@ export default function ActiveSOS() {
   // =========================================================
 
   const activateSOS = async () => {
-    console.log("🚨 SOS ACTIVATED");
+    console.log("SOS ACTIVATED");
 
     setError("");
     setSaved(false);
+    setSosStatus("Getting location and starting recording...");
 
-    // Start recording without waiting for Telegram.
+    // Run location sharing without waiting for it to finish.
     void sendTelegramLocation();
 
+    // Start recording independently.
     await startRecording();
   };
 
@@ -988,7 +993,29 @@ export default function ActiveSOS() {
                         activateSOS
                       }
                     />
-                  )}
+                  )
+                }
+                              
+                {/* SOS LOCATION STATUS */}
+                {sosStatus && (
+                  <div className="recording-saving" role="status">
+                    {sosStatus.includes("Getting") ||
+                    sosStatus.includes("Sending") ? (
+                      <Loader2 size={20} className="spin" />
+                    ) : (
+                      <MapPin size={20} />
+                    )}
+                    <span>{sosStatus}</span>
+                  </div>
+                )}
+
+                {/* RECORDING */}
+                {recording && (
+                  <div className="recording-panel">
+                    {/* Keep your existing recording-panel content here */}
+                  </div>
+                )}
+
 
                 {/* RECORDING */}
 
