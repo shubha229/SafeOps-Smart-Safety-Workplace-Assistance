@@ -158,10 +158,19 @@ export default function Dashboard() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "Telegram alert delivery failed.");
+        throw new Error(data.message || "Telegram alert failed.");
       }
 
-      setSosStatus("Location sent successfully.");
+      if (data.locationPinSent === false) {
+        setSosStatus(
+          data.message ||
+            "SOS text alert sent with a Google Maps link, but the Telegram location pin could not be sent."
+        );
+      } else {
+        setSosStatus(
+          data.message || "SOS alert sent successfully."
+        );
+      }
       return true;
     } catch (error) {
       console.error("Telegram location alert failed:", error);
