@@ -1,4 +1,3 @@
-
 const TELEGRAM_API = "https://api.telegram.org";
 
 type TelegramResponse = {
@@ -9,33 +8,70 @@ type TelegramResponse = {
 async function telegramRequest(
   method: string,
   body: Record<string, string | number>
-) {
+): Promise<TelegramResponse> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!token) {
     throw new Error("TELEGRAM_BOT_TOKEN is missing.");
   }
 
-  const response = await fetch(
-    `${TELEGRAM_API}/bot${token}/${method}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    }
-  );
+  const controller = new AbortController();
 
-  const data = (await response.json()) as TelegramResponse;
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 15000);
 
-  if (!response.ok || !data.ok) {
-    throw new Error(
-      `${method} failed: ${data.description || `HTTP ${response.status}`}`
+  try {
+    console.log(`Sending Telegram request: ${method}`);
+
+    const response = await fetch(
+      `${TELEGRAM_API}/bot${token}/${method}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      }
     );
-  }
 
-  return data;
+    const responseText = await response.text();
+
+    let data: TelegramResponse;
+
+    try {
+      data = JSON.parse(responseText) as TelegramResponse;
+    } catch {
+      throw new Error(
+        `Telegram ${method} returned an invalid response (HTTP ${response.status}).`
+      );
+    }
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        `Telegram ${method} failed: ${
+          data.description || `HTTP ${response.status}`
+        }`
+      );
+    }
+
+    console.log(`Telegram ${method} succeeded.`);
+
+    return data;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(
+        `Telegram ${method} timed out after 15 seconds.`
+      );
+    }
+
+    console.error(`Telegram ${method} request failed:`, error);
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function sendTelegramSOS(
@@ -63,7 +99,7 @@ export async function sendTelegramSOS(
   const mapsUrl =
     `https://www.google.com/maps?q=${latitude},${longitude}`;
 
-  // Send the text alert first.
+  // Send the SOS text alert.
   await telegramRequest("sendMessage", {
     chat_id: chatId,
     text:
@@ -73,6 +109,8 @@ export async function sendTelegramSOS(
       `Please contact them and check their safety.`,
   });
 
+  console.log("Telegram SOS text alert delivered.");
+
   // Send the actual Telegram location pin.
   await telegramRequest("sendLocation", {
     chat_id: chatId,
@@ -80,5 +118,10 @@ export async function sendTelegramSOS(
     longitude,
   });
 
-  return { success: true };
+  console.log("Telegram SOS location pin delivered.");
+
+  return {
+    success: true,
+    message: "SOS alert and location pin sent successfully.",
+  };
 }
