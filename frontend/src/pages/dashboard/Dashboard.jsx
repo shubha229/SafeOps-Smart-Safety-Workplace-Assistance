@@ -199,17 +199,6 @@ export default function Dashboard() {
           setRecording(true);
           setSaving(false);
           setRecordingTime(0);
-        },
-
-        onTimeUpdate: (seconds) => {
-          setRecordingTime(seconds);
-        },
-
-        onStarted: () => {
-          console.log("Emergency recording started");
-          setRecording(true);
-          setSaving(false);
-          setRecordingTime(0);
           setRecordingStatus("Emergency recording active.");
         },
 
