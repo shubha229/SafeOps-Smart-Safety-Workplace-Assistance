@@ -391,7 +391,12 @@ export default function ActiveSOS() {
         }
       );
 
+      console.log("Telegram location endpoint:", `${API_URL}/telegram/sos-location`);
+      console.log("Telegram HTTP status:", response.status);
+
       const data = await response.json();
+
+      console.log("Telegram response:", data);
 
       if (!response.ok || !data.success) {
         throw new Error(
